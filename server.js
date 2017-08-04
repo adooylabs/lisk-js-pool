@@ -27,6 +27,28 @@ function getTransactionFee() {
   return LSKToDust(0.1);
 }
 
+async function getEligableVoters() {
+  const delegates = await Promise.all(config.requiredVotes.map(delegate => http.get(`/api/delegates/get?username=${delegate}`)));
+  const blacklist = delegates.map(delegate => delegate.data.delegate.address);
+  blacklist.push(config.address);
+  const delegateVoters = await Promise.all(delegates.map(async delegate => {
+    const voters = await http.get(`/api/delegates/voters?publicKey=${delegate.data.delegate.publicKey}`);
+    return {delegate: delegate.data.delegate.username, voters: voters.data.accounts};
+  }));
+  const allVoters = [];
+  delegateVoters.forEach(delegate => {
+    delegate.voters.forEach(voter => {
+      const found = allVoters.filter(eligableVoter => eligableVoter.address == voter.address);
+      if (found.length === 0) {
+        allVoters.push({voter, votes: 1});
+      } else {
+        found[0].votes = found[0].votes + 1;
+      }
+    });
+  });
+  return allVoters.filter(eligableVoter => eligableVoter.votes == config.requiredVotes.length && blacklist.filter(delegate => delegate == eligableVoter.voter.address).length === 0);
+}
+
 async function retrieveNewBalance(balance) {
   try {
     const newBalance = JSON.parse(JSON.stringify(balance));
@@ -36,25 +58,7 @@ async function retrieveNewBalance(balance) {
     const distributableBalance = parseInt(currentBalance.data.balance) - owedBalance;
     console.log("Distributable balance: " + distributableBalance);
     if (distributableBalance > 0) {
-      const delegates = await Promise.all(config.requiredVotes.map(delegate => http.get(`/api/delegates/get?username=${delegate}`)));
-      const blacklist = delegates.map(delegate => delegate.data.delegate.address);
-      blacklist.push(config.address);
-      const delegateVoters = await Promise.all(delegates.map(async delegate => {
-        const voters = await http.get(`/api/delegates/voters?publicKey=${delegate.data.delegate.publicKey}`);
-        return {delegate: delegate.data.delegate.username, voters: voters.data.accounts};
-      }));
-      let eligableVoters = [];
-      delegateVoters.forEach(delegate => {
-        delegate.voters.forEach(voter => {
-          const found = eligableVoters.filter(eligableVoter => eligableVoter.address == voter.address);
-          if (found.length === 0) {
-            eligableVoters.push({voter, votes: 1});
-          } else {
-            found[0].votes = found[0].votes + 1;
-          }
-        });
-      });
-      eligableVoters = eligableVoters.filter(eligableVoter => eligableVoter.votes == config.requiredVotes.length && blacklist.filter(delegate => delegate == eligableVoter.voter.address).length === 0);
+      const eligableVoters = await getEligableVoters();
       const totalWeight = eligableVoters.reduce((mem, val) => mem = mem + parseInt(val.voter.balance), 0);
       eligableVoters.forEach(eligableVoter => {
         const eligibleBalance = math.floor(math.eval(`${distributableBalance} * (${parseInt(eligableVoter.voter.balance)} / ${totalWeight})`));
@@ -66,6 +70,8 @@ async function retrieveNewBalance(balance) {
         }
       });
       newBalance.updateTimestamp = newTimestamp;
+      return newBalance;
+    } else {
       return newBalance;
     }
   } catch(e) {
