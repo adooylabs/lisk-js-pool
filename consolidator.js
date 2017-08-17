@@ -6,6 +6,7 @@ const later = require('later');
 
 const Logic = require("./logic");
 const logic = new Logic(config);
+const util = require("./util");
 
 const schedule = later.parse.cron(config.schedule);
 
@@ -13,7 +14,7 @@ async function app() {
   jsonfile.readFile(balanceFile, async (err, balance) => {
     if(!balance) {
       balance = {
-        updateTimestamp: unixTimeStamp(new Date().getTime()),
+        updateTimestamp: util.unixTimeStamp(new Date().getTime()),
         accounts: []
       }
     }
