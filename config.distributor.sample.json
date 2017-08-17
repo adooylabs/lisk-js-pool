@@ -4,5 +4,7 @@
   "address": "",
   "secret1": "",
   "secret2": null,
-  "requiredVotes": []
+  "requiredVotes": [],
+  "schedule": "0 10 * * 6",
+  "minPayout": 1
 }

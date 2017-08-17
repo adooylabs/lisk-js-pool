@@ -1,3 +1,5 @@
-config.json
+config.consolidator.json
+config.distributor.json
 node_modules
-balance.json
+consolidated.json
+distributed.json

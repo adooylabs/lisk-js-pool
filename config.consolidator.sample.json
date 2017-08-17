@@ -1,0 +1,11 @@
+{
+  "node": "",
+  "port": null,
+  "delegate": "",
+  "secret1": "",
+  "secret2": null,
+  "targetAddress": "",
+  "targetPercentage": 20,
+  "schedule": "0 9 * * 6",
+  "minPayout": 1
+}
