@@ -42,4 +42,6 @@ async function app() {
   }); 
 }
 
+console.log('Distributor started succesfully, next run will be at: ' + later.schedule(schedule).next(1));
+
 later.setInterval(app, schedule);

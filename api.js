@@ -1,5 +1,4 @@
 const axios = require("axios");
-const config = require("./config.distributor.json");
 const lisk = require("lisk-js");
 
 class Api {
