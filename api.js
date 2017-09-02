@@ -33,7 +33,7 @@ class Api {
     const netHash = await this.http.get("/api/blocks/getNethash");
     const httpConfig = {
       headers: {
-        "version": "0.8.0",
+        "version": "0.9.5",
         "port": 1,
         "nethash": netHash.data.nethash
       }

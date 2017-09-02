@@ -36,6 +36,10 @@ async function app() {
   }); 
 }
 
-console.log('Consolidator started succesfully, next run will be at: ' + later.schedule(schedule).next(1));
+if (process.argv[2] === "--once") {
+  app();
+} else {
+  console.log('Consolidator started succesfully, next run will be at: ' + later.schedule(schedule).next(1));
 
-later.setInterval(app, schedule);
+  later.setInterval(app, schedule);
+}
