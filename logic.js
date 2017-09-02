@@ -30,7 +30,7 @@ class Logic {
   async retrieveNewBalance(balance) {
     try {
       const newBalance = JSON.parse(JSON.stringify(balance));
-      const newTimestamp = util.unixTimeStamp(new Date().getTime());
+      newBalance.updateTimestamp = util.unixTimeStamp(new Date().getTime());
       const currentBalance = await this.api.getBalance(this.config.address);
       const owedBalance = newBalance.accounts.reduce((mem, val) => mem = mem + parseInt(val.unpaidBalance), 0);
       const distributableBalance = parseInt(currentBalance) - owedBalance;
@@ -47,11 +47,8 @@ class Logic {
             found[0].unpaidBalance = parseInt(found[0].unpaidBalance) + parseInt(eligibleBalance);
           }
         });
-        newBalance.updateTimestamp = newTimestamp;
-        return newBalance;
-      } else {
-        return newBalance;
       }
+      return newBalance;
     } catch(e) {
       console.log(e);
       return balance;
