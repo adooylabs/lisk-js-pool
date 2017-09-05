@@ -10,21 +10,32 @@ class Logic {
   }
 
   async getEligableVoters() {
-    const delegates = await Promise.all(this.config.requiredVotes.map(delegate => this.api.getDelegateDetails(delegate)));
-    const blacklist = delegates.map(delegate => delegate.delegate);
+    const allVotes = [];
+    this.config.requiredVotes.forEach(dg => allVotes.push({delegate: dg, required: true}));
+    this.config.optionalVotes.forEach(dg => allVotes.push({delegate: dg, required: false}));
+    const delegates = await Promise.all(allVotes.map(delegate => this.api.getDelegateDetails(delegate)));
+    const blacklist = delegates.map(delegate => delegate.address);
     blacklist.push(this.config.address);
     const allVoters = [];
     delegates.forEach(delegate => {
       delegate.voters.forEach(voter => {
-        const found = allVoters.filter(eligableVoter => eligableVoter.address == voter.address);
-        if (found.length === 0) {
-          allVoters.push({voter, votes: 1});
+        const found = allVoters.filter(eligableVoter => eligableVoter.voter.address == voter.address);
+        if (delegate.required) {
+          if (found.length === 0) {
+            allVoters.push({voter, required: 1, optional: 0});
+          } else {
+            found[0].required = found[0].required + 1;
+          }
         } else {
-          found[0].votes = found[0].votes + 1;
+          if (found.length === 0) {
+            allVoters.push({voter, required: 0, optional: 1});
+          } else {
+            found[0].optional = found[0].optional + 1;
+          }
         }
       });
     });
-    return allVoters.filter(eligableVoter => eligableVoter.votes == this.config.requiredVotes.length && blacklist.filter(delegate => delegate == eligableVoter.voter.address).length === 0);
+    return allVoters.filter(eligableVoter => eligableVoter.required == this.config.requiredVotes.length && blacklist.filter(address => address == eligableVoter.voter.address).length === 0);
   }
 
   async retrieveNewBalance(balance) {
@@ -37,9 +48,12 @@ class Logic {
       console.log("Distributable balance: " + distributableBalance);
       if (distributableBalance > 0) {
         const eligableVoters = await this.getEligableVoters();
-        const totalWeight = eligableVoters.reduce((mem, val) => mem = mem + parseInt(val.voter.balance), 0);
         eligableVoters.forEach(eligableVoter => {
-          const eligibleBalance = math.floor(math.eval(`${distributableBalance} * (${parseInt(eligableVoter.voter.balance)} / ${totalWeight})`));
+          eligableVoter.voter.increasedBalance = eligableVoter.voter.balance * (1 + ((eligableVoter.optional * this.config.optionalIncreasePercentage) / 100));
+        });
+        const totalWeight = eligableVoters.reduce((mem, val) => mem = mem + parseInt(val.voter.increasedBalance), 0);
+        eligableVoters.forEach(eligableVoter => {
+          const eligibleBalance = math.floor(math.eval(`${distributableBalance} * (${parseInt(eligableVoter.voter.increasedBalance)} / ${totalWeight})`));
           const found = newBalance.accounts.filter(account => account.address == eligableVoter.voter.address);
           if (found.length === 0) {
             newBalance.accounts.push({address: eligableVoter.voter.address, paidBalance: 0, unpaidBalance: eligibleBalance})

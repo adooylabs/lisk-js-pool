@@ -12,9 +12,9 @@ class Api {
   }
 
   async getDelegateDetails (delegate) {
-    const dg = await this.http.get(`/api/delegates/get?username=${delegate}`);
+    const dg = await this.http.get(`/api/delegates/get?username=${delegate.delegate}`);
     const voters = await this.http.get(`/api/delegates/voters?publicKey=${dg.data.delegate.publicKey}`);
-    return {delegate: dg.data.delegate.username, voters: voters.data.accounts};
+    return {delegate: dg.data.delegate.username, address: dg.data.delegate.address,required: delegate.required, voters: voters.data.accounts};
   }
 
   async getBalance(address) {

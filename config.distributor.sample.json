@@ -5,6 +5,8 @@
   "secret1": "",
   "secret2": null,
   "requiredVotes": [],
+  "optionalVotes": [],
+  "optionalIncreasePercentage": 5,
   "schedule": "0 10 * * 6",
   "minPayout": 1
 }
