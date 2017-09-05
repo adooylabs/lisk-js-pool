@@ -5,7 +5,7 @@
   "secret1": "",
   "secret2": null,
   "targetAddress": "",
-  "targetPercentage": 20,
+  "targetPercentage": 40,
   "schedule": "0 9 * * 6",
   "minPayout": 1
 }
