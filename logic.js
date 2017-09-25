@@ -97,7 +97,7 @@ class Logic {
   async payout(account) {
     try {
       if (account.unpaidBalance > util.LSKToDust(this.config.minPayout)) {
-        const payoutAmount = account.unpaidBalance - account.exact ? 0 : util.getTransactionFee();
+        const payoutAmount = account.unpaidBalance - (account.exact ? 0 : util.getTransactionFee());
         const transaction = lisk.transaction.createTransaction(account.address, payoutAmount, this.config.secret1, this.config.secret2);
         const paymentRes = await this.api.sendTransaction(transaction);
         if (paymentRes.success) {
