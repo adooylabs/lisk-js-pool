@@ -75,13 +75,18 @@ class Logic {
     const forgedAmount = await this.api.getForgedAmount(this.config.delegate, balance.updateTimestamp, newTimestamp);
     const finalAccounts = [];
     this.config.targetAddresses.forEach(ta => {
-      const payoutAmount = math.floor(math.eval(`${parseInt(forgedAmount)} / 100 * ${ta.percentage}`));
+      let payoutAmount = 0;
+      if (ta.percentage) {
+        payoutAmount = math.floor(math.eval(`${parseInt(forgedAmount)} / 100 * ${ta.percentage}`));
+      } else if (ta.amount) {
+        payoutAmount = util.LSKToDust(ta.amount);
+      }
       const foundAccount = newBalance.accounts.find(account => account.address === this.config.targetAddress);
       if (foundAccount)  {
         foundAccount.unpaidBalance = parseInt(foundAccount.unpaidBalance) + payoutAmount;
         finalAccounts.push(foundAccount);
       } else {
-        finalAccounts.push({address: ta.address, paidBalance: 0, unpaidBalance: payoutAmount});
+        finalAccounts.push({address: ta.address, paidBalance: 0, unpaidBalance: payoutAmount, exact: ta.exact});
       }
     });
     newBalance.updateTimestamp = newTimestamp;
@@ -92,7 +97,7 @@ class Logic {
   async payout(account) {
     try {
       if (account.unpaidBalance > util.LSKToDust(this.config.minPayout)) {
-        const payoutAmount = account.unpaidBalance - util.getTransactionFee();
+        const payoutAmount = account.unpaidBalance - account.exact ? 0 : util.getTransactionFee();
         const transaction = lisk.transaction.createTransaction(account.address, payoutAmount, this.config.secret1, this.config.secret2);
         const paymentRes = await this.api.sendTransaction(transaction);
         if (paymentRes.success) {
