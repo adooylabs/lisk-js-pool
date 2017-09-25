@@ -73,15 +73,19 @@ class Logic {
     const newBalance = JSON.parse(JSON.stringify(balance));
     const newTimestamp = util.unixTimeStamp(new Date().getTime());
     const forgedAmount = await this.api.getForgedAmount(this.config.delegate, balance.updateTimestamp, newTimestamp);
-    const payoutAmount = math.floor(math.eval(`${parseInt(forgedAmount)} / 100 * ${this.config.targetPercentage}`));
-    const matchedAccounts = newBalance.accounts.filter(account => account.address === this.config.targetAddress);
-    if (matchedAccounts.length == 1) {
-      matchedAccounts[0].unpaidBalance = parseInt(matchedAccounts[0].unpaidBalance) + payoutAmount;
-    } else {
-      matchedAccounts.push({address: this.config.targetAddress, paidBalance: 0, unpaidBalance: payoutAmount})
-    }
+    const finalAccounts = [];
+    this.config.targetAddresses.forEach(ta => {
+      const payoutAmount = math.floor(math.eval(`${parseInt(forgedAmount)} / 100 * ${ta.percentage}`));
+      const foundAccount = newBalance.accounts.find(account => account.address === this.config.targetAddress);
+      if (foundAccount)  {
+        foundAccount.unpaidBalance = parseInt(foundAccount.unpaidBalance) + payoutAmount;
+        finalAccounts.push(foundAccount);
+      } else {
+        finalAccounts.push({address: ta.address, paidBalance: 0, unpaidBalance: payoutAmount});
+      }
+    });
     newBalance.updateTimestamp = newTimestamp;
-    newBalance.accounts = matchedAccounts;
+    newBalance.accounts = finalAccounts;
     return newBalance;
   }
 

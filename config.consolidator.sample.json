@@ -4,8 +4,9 @@
   "delegate": "",
   "secret1": "",
   "secret2": null,
-  "targetAddress": "",
-  "targetPercentage": 40,
+  "targetAddresses": [
+    { "address": "", "percentage": 40 }
+  ],
   "schedule": "0 9 * * 6",
   "minPayout": 1
 }
