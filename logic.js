@@ -70,36 +70,41 @@ class Logic {
   }
 
   async retrieveNewForgedBalance(balance) {
-    const newBalance = JSON.parse(JSON.stringify(balance));
-    const newTimestamp = util.unixTimeStamp(new Date().getTime());
-    const forgedAmount = await this.api.getForgedAmount(this.config.delegate, balance.updateTimestamp, newTimestamp);
-    if (forgedAmount > 0) {
-      const finalAccounts = [];
-      this.config.targetAddresses.forEach(ta => {
-        let payoutAmount = 0;
-        if (ta.percentage) {
-          payoutAmount = math.floor(math.eval(`${parseInt(forgedAmount)} / 100 * ${ta.percentage}`));
-        } else if (ta.amount) {
-          payoutAmount = util.LSKToDust(ta.amount);
-        }
-        const foundAccount = newBalance.accounts.find(account => account.address === this.config.targetAddress);
-        if (foundAccount)  {
-          foundAccount.unpaidBalance = parseInt(foundAccount.unpaidBalance) + payoutAmount;
-          finalAccounts.push(foundAccount);
-        } else {
-          finalAccounts.push({address: ta.address, paidBalance: 0, unpaidBalance: payoutAmount, exact: ta.exact});
-        }
-      });
-      newBalance.accounts = finalAccounts;
+    try {
+      const newBalance = JSON.parse(JSON.stringify(balance));
+      const newTimestamp = util.unixTimeStamp(new Date().getTime());
+      const forgedAmount = await this.api.getForgedAmount(this.config.delegate, balance.updateTimestamp, newTimestamp);
+      if (forgedAmount > 0) {
+        const finalAccounts = [];
+        this.config.targetAddresses.forEach(ta => {
+          let payoutAmount = 0;
+          if (ta.percentage) {
+            payoutAmount = math.floor(math.eval(`${parseInt(forgedAmount)} / 100 * ${ta.percentage}`));
+          } else if (ta.amount) {
+            payoutAmount = util.LSKToDust(ta.amount);
+          }
+          const foundAccount = newBalance.accounts.find(account => account.address === ta.address);
+          if (foundAccount)  {
+            foundAccount.unpaidBalance = parseInt(foundAccount.unpaidBalance) + payoutAmount;
+            finalAccounts.push(foundAccount);
+          } else {
+            finalAccounts.push({address: ta.address, paidBalance: 0, unpaidBalance: payoutAmount, payfee: ta.payfee});
+          }
+        });
+        newBalance.accounts = finalAccounts;
+      }
+      newBalance.updateTimestamp = newTimestamp;
+      return newBalance;
+    } catch(e) {
+      console.log(e);
+      return balance;
     }
-    newBalance.updateTimestamp = newTimestamp;
-    return newBalance;
   }
 
   async payout(account) {
     try {
       if (account.unpaidBalance > util.LSKToDust(this.config.minPayout)) {
-        const payoutAmount = account.unpaidBalance - (account.exact ? 0 : util.getTransactionFee());
+        const payoutAmount = account.unpaidBalance - (account.payfee ? 0 : util.getTransactionFee());
         const transaction = lisk.transaction.createTransaction(account.address, payoutAmount, this.config.secret1, this.config.secret2);
         const paymentRes = await this.api.sendTransaction(transaction);
         if (paymentRes.success) {
