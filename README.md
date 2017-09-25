@@ -40,7 +40,7 @@ and edit accordingly:
   "secret1": "", // Your delegate first secret
   "secret2": null, // Your delegate second secret
   "targetAddresses": [
-    { "address": "", "percentage": 40, "payfee": true }
+    { "address": "", "percentage": 40, "payfee": true },
     { "address": "", "amount": 200, "payfee": true }
   ], // Array of addresses to pay out to with a percentage or amount in lisk to pay out. The payfee flag determines if you pay the fee or if it is deducted from the amount to pay.
   "schedule": "0 9 * * 6", // Time when this script would do it's payouts in a cron format (https://crontab.guru/)

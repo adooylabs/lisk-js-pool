@@ -5,7 +5,8 @@
   "secret1": "",
   "secret2": null,
   "targetAddresses": [
-    { "address": "", "percentage": 40, "payfee": true }
+    { "address": "", "percentage": 40, "payfee": true },
+    { "address": "", "amount": 200, "payfee": true }
   ],
   "schedule": "0 9 * * 6",
   "minPayout": 1
