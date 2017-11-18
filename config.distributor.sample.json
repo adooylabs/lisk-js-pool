@@ -4,6 +4,8 @@
   "address": "",
   "secret1": "",
   "secret2": null,
+  "mode": "forged",
+  "percentage": 100,
   "requiredVotes": [],
   "optionalVotes": [],
   "optionalIncreasePercentage": 5,

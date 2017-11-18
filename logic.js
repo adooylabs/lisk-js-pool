@@ -38,22 +38,35 @@ class Logic {
     return allVoters.filter(eligableVoter => eligableVoter.required == this.config.requiredVotes.length && blacklist.filter(address => address == eligableVoter.voter.address).length === 0);
   }
 
+  async retrieveAmountToDistribute(balance) {
+    const newBalance = JSON.parse(JSON.stringify(balance));
+    const newTimestamp = util.unixTimeStamp(new Date().getTime());
+    let distributableBalance = 0;
+    if (this.config.mode === "forged") {
+      const forgedAmount = await this.api.getForgedAmountFromAddress(this.config.address, balance.updateTimestamp, newTimestamp);
+      distributableBalance = math.floor(math.eval(`${parseInt(forgedAmount)} / 100 * ${this.config.percentage}`));
+    } else if (this.config.mode === "received") {
+      const currentBalance = await this.api.getBalance(this.config.address);
+      const owedBalance = newBalance.accounts.reduce((mem, val) => mem = mem + parseInt(val.unpaidBalance), 0);
+      distributableBalance = parseInt(currentBalance) - owedBalance;
+    }
+    return { balance: parseInt(distributableBalance), newTimestamp };
+  }
+
   async retrieveNewBalance(balance) {
     try {
       const newBalance = JSON.parse(JSON.stringify(balance));
-      newBalance.updateTimestamp = util.unixTimeStamp(new Date().getTime());
-      const currentBalance = await this.api.getBalance(this.config.address);
-      const owedBalance = newBalance.accounts.reduce((mem, val) => mem = mem + parseInt(val.unpaidBalance), 0);
-      const distributableBalance = parseInt(currentBalance) - owedBalance;
-      console.log("Distributable balance: " + distributableBalance);
-      if (distributableBalance > 0) {
+      const distributableBalance = await this.retrieveAmountToDistribute(balance);
+      newBalance.updateTimestamp = distributableBalance.newTimestamp;
+      console.log("Distributable balance: " + distributableBalance.balance);
+      if (distributableBalance.balance > 0) {
         const eligableVoters = await this.getEligableVoters();
         eligableVoters.forEach(eligableVoter => {
           eligableVoter.voter.increasedBalance = eligableVoter.voter.balance * (1 + ((eligableVoter.optional * this.config.optionalIncreasePercentage) / 100));
         });
         const totalWeight = eligableVoters.reduce((mem, val) => mem = mem + parseInt(val.voter.increasedBalance), 0);
         eligableVoters.forEach(eligableVoter => {
-          const eligibleBalance = math.floor(math.eval(`${distributableBalance} * (${parseInt(eligableVoter.voter.increasedBalance)} / ${totalWeight})`));
+          const eligibleBalance = math.floor(math.eval(`${distributableBalance.balance} * (${parseInt(eligableVoter.voter.increasedBalance)} / ${totalWeight})`));
           const found = newBalance.accounts.filter(account => account.address == eligableVoter.voter.address);
           if (found.length === 0) {
             newBalance.accounts.push({address: eligableVoter.voter.address, paidBalance: 0, unpaidBalance: eligibleBalance})

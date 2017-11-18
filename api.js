@@ -22,6 +22,12 @@ class Api {
     return currentBalance.data.balance;
   }
 
+  async getForgedAmountFromAddress(address, start, end) {
+    const publicKey = await this.http.get(`/api/accounts/getPublicKey?address=${address}`);
+    const forgedAmount = await this.http.get('/api/delegates/forging/getForgedByAccount?generatorPublicKey=' + publicKey.data.publicKey + '&start=' + start + '&end=' + end);
+    return forgedAmount.data.forged;
+  }
+
   async getForgedAmount(delegate, start, end) {
     const publicKey = await this.http.get(`/api/delegates/get?username=${delegate}`,)
     const forgedAmount = await this.http.get('/api/delegates/forging/getForgedByAccount?generatorPublicKey=' + publicKey.data.delegate.publicKey + '&start=' + start + '&end=' + end);
