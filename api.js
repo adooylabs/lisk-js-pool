@@ -29,17 +29,23 @@ class Api {
   }
 
   async getForgedAmount(delegate, start, end) {
-    const publicKey = await this.http.get(`/api/delegates/get?username=${delegate}`,)
+    const publicKey = await this.http.get(`/api/delegates/get?username=${delegate}`)
     const forgedAmount = await this.http.get('/api/delegates/forging/getForgedByAccount?generatorPublicKey=' + publicKey.data.delegate.publicKey + '&start=' + start + '&end=' + end);
     return forgedAmount.data.forged;
   }
 
+  async getVersion() {
+    const versions = await this.http.get(`/api/peers/version`);
+    return versions.data.version;
+  }
+
   async sendTransaction (transaction) {
+    const version = await this.getVersion();
     const payload = {"transaction": transaction};
     const netHash = await this.http.get("/api/blocks/getNethash");
     const httpConfig = {
       headers: {
-        "version": "0.9.5",
+        "version": version,
         "port": 1,
         "nethash": netHash.data.nethash
       }

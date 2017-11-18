@@ -113,7 +113,7 @@ class Logic {
       return balance;
     }
   }
-
+ 
   async payout(account) {
     try {
       if (account.unpaidBalance > util.LSKToDust(this.config.minPayout)) {
