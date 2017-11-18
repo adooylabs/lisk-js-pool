@@ -69,7 +69,7 @@ class Logic {
           const eligibleBalance = math.floor(math.eval(`${distributableBalance.balance} * (${parseInt(eligableVoter.voter.increasedBalance)} / ${totalWeight})`));
           const found = newBalance.accounts.filter(account => account.address == eligableVoter.voter.address);
           if (found.length === 0) {
-            newBalance.accounts.push({address: eligableVoter.voter.address, paidBalance: 0, unpaidBalance: eligibleBalance})
+            newBalance.accounts.push({address: eligableVoter.voter.address, paidBalance: 0, unpaidBalance: eligibleBalance, payfee: false})
           } else {
             found[0].unpaidBalance = parseInt(found[0].unpaidBalance) + parseInt(eligibleBalance);
           }
