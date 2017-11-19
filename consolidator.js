@@ -32,24 +32,24 @@ async function app() {
     }
     try {
       const newBalance = await logic.retrieveNewForgedBalance(balance);
-      console.log(`New owed balance:`);
-      console.log(JSON.stringify(newBalance, null, 2));
       console.log('-------------------------------------------------------');
       const newAccounts = await Promise.all(newBalance.accounts.map(account => logic.payout(account, argv.dryrun)));
       console.log('-------------------------------------------------------');
-      newBalance.accounts = newAccounts;
-      console.log(`New processed balance:`);
-      console.log(JSON.stringify(newBalance, null, 2));
+      console.log(`Total amount sent to node for processing: ${util.dustToLSK(newAccounts.reduce((mem, a) => mem = mem + a.paid, 0))}`);
+      console.log('-------------------------------------------------------');
+      newBalance.accounts = newAccounts.map(a => a.account);
       if (!argv.dryrun) {
         jsonfile.writeFile(balanceFile, newBalance, (err) => {
           if (err) {
-            throw err;
+            throw { data: newBalance, err };
           }
         });
       }
     } catch (e) {
       console.log('Encountered an error while trying to update the balance');
-      throw e;
+      console.log('This had to be saved to disk but failed, verify everything!');
+      console.log(JSON.stringify(errObj.data, null, 2));
+      throw errObj.err;
     }
   }); 
 }

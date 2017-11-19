@@ -31,31 +31,37 @@ async function app() {
       }
     }
     try {
-      const newBalance = await logic.retrieveNewBalance(balance);
-      console.log(`New owed balance:`);
-      console.log(JSON.stringify(newBalance, null, 2));
+      const { newBalance, distributable, payableAmount } = await logic.retrieveNewBalance(balance);
       if (newBalance) {
+        console.log('-------------------------------------------------------');
+        console.log("Historical Paid : " + util.dustToLSK(balance.accounts.reduce((mem, val) => mem = mem + val.paidBalance, 0)) + " LSK");
+        console.log("Historical Unpaid : " + util.dustToLSK(balance.accounts.reduce((mem, val) => mem = mem + val.unpaidBalance, 0)) + " LSK");
+        console.log(`Distributable balance: ${util.dustToLSK(distributable)}`);
+        console.log(`Payable balance: ${util.dustToLSK(payableAmount)}`);
         console.log('-------------------------------------------------------');
         const newAccounts = await Promise.all(newBalance.accounts.map(account => logic.payout(account, argv.dryrun)));
         console.log('-------------------------------------------------------');
-        newBalance.accounts = newAccounts;
-        console.log(`New processed balance:`);
-        console.log(JSON.stringify(newBalance, null, 2));
-        console.log("Paid : " + util.dustToLSK(newBalance.accounts.reduce((mem, val) => mem = mem + val.paidBalance, 0)) + " LSK");
-        console.log("Unpaid : " + util.dustToLSK(newBalance.accounts.reduce((mem, val) => mem = mem + val.unpaidBalance, 0)) + " LSK");
+        console.log(`Total amount sent to node for processing: ${util.dustToLSK(newAccounts.reduce((mem, a) => mem = mem + a.paid, 0))}`);
+        console.log('-------------------------------------------------------');
+        newBalance.accounts = newAccounts.map(a => a.account);
+        console.log("Final Paid : " + util.dustToLSK(newBalance.accounts.reduce((mem, val) => mem = mem + val.paidBalance, 0)) + " LSK");
+        console.log("Final Unpaid : " + util.dustToLSK(newBalance.accounts.reduce((mem, val) => mem = mem + val.unpaidBalance, 0)) + " LSK");
+        console.log('-------------------------------------------------------');
         if (!argv.dryrun) {
           jsonfile.writeFile(balanceFile, newBalance, (err) => {
             if (err) {
-              throw err;
+              throw { data: newBalance, err };
             }
           });
         }
       } else {
         throw new Error("Undefined balance");
       }
-    } catch (e) {
+    } catch (errObj) {
       console.log('Encountered an error while trying to update the balance');
-      throw e;
+      console.log('This had to be saved to disk but failed, verify everything!');
+      console.log(JSON.stringify(errObj.data, null, 2));
+      throw errObj.err;
     }
   }); 
 }

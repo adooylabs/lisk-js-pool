@@ -58,7 +58,6 @@ class Logic {
       const newBalance = JSON.parse(JSON.stringify(balance));
       const distributableBalance = await this.retrieveAmountToDistribute(balance);
       newBalance.updateTimestamp = distributableBalance.newTimestamp;
-      console.log("Distributable balance: " + distributableBalance.balance);
       if (distributableBalance.balance > 0) {
         const eligableVoters = await this.getEligableVoters();
         eligableVoters.forEach(eligableVoter => {
@@ -75,10 +74,16 @@ class Logic {
           }
         });
       }
-      return newBalance;
+      const payableAmount = newBalance.accounts.reduce((mem, a) => {
+        if (a.unpaidBalance > util.LSKToDust(this.config.minPayout)) {
+         mem = mem + a.unpaidBalance;
+        }
+        return mem;
+      }, 0);
+      return { newBalance, distributable: distributableBalance.balance, payableAmount };
     } catch(e) {
       console.log(e);
-      return balance;
+      return { newBalance: balance, distributable: distributableBalance.balance, payableAmount: 0 };
     }
   }
 
@@ -117,9 +122,11 @@ class Logic {
  
   async payout(account, dryrun) {
     try {
+      let paid = 0;
       if (account.unpaidBalance > util.LSKToDust(this.config.minPayout)) {
         const payoutAmount = account.unpaidBalance - (account.payfee ? 0 : util.getTransactionFee());
-        console.log(`Sending ${util.dustToLSK(account.unpaidBalance)} to ${account.address} ${account.payfee ? '' : `(-${util.dustToLSK(util.getTransactionFee())} Fee)`}`);
+        paid = payoutAmount + util.getTransactionFee();
+        console.log(`Sending ${util.dustToLSK(paid)} to ${account.address}`);
         const transaction = lisk.transaction.createTransaction(account.address, payoutAmount, this.config.secret1, this.config.secret2);
         if (!dryrun) {
           const paymentRes = await this.api.sendTransaction(transaction);
@@ -134,11 +141,11 @@ class Logic {
           account.unpaidBalance = 0;
         }
       }
-      return account;
+      return { account, paid };
     } catch(e) {
       console.log("Payment failed:");
       console.log(e);
-      return account;
+      return { account, paid: 0 };
     }
   }
 
