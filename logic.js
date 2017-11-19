@@ -99,6 +99,7 @@ class Logic {
           const foundAccount = newBalance.accounts.find(account => account.address === ta.address);
           if (foundAccount)  {
             foundAccount.unpaidBalance = parseInt(foundAccount.unpaidBalance) + payoutAmount;
+            foundAccount.payfee = ta.payfee;
             finalAccounts.push(foundAccount);
           } else {
             finalAccounts.push({address: ta.address, paidBalance: 0, unpaidBalance: payoutAmount, payfee: ta.payfee});
@@ -114,17 +115,23 @@ class Logic {
     }
   }
  
-  async payout(account) {
+  async payout(account, dryrun) {
     try {
       if (account.unpaidBalance > util.LSKToDust(this.config.minPayout)) {
         const payoutAmount = account.unpaidBalance - (account.payfee ? 0 : util.getTransactionFee());
+        console.log(`Sending ${util.dustToLSK(account.unpaidBalance)} to ${account.address} ${account.payfee ? '' : `(-${util.dustToLSK(util.getTransactionFee())} Fee)`}`);
         const transaction = lisk.transaction.createTransaction(account.address, payoutAmount, this.config.secret1, this.config.secret2);
-        const paymentRes = await this.api.sendTransaction(transaction);
-        if (paymentRes.success) {
-          account.paidBalance = account.unpaidBalance;
-          account.unpaidBalance = 0;
+        if (!dryrun) {
+          const paymentRes = await this.api.sendTransaction(transaction);
+          if (paymentRes.success) {
+            account.paidBalance = account.paidBalance + account.unpaidBalance;
+            account.unpaidBalance = 0;
+          } else {
+            console.log(paymentRes);
+          }
         } else {
-          console.log(paymentRes);
+          account.paidBalance = account.paidBalance + account.unpaidBalance;
+          account.unpaidBalance = 0;
         }
       }
       return account;

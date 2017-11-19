@@ -9,6 +9,12 @@ This pool script is ideal if you would like to run a pool with your team. The ba
 - One member will run distributor.js next to his/her consolidator.js
 - The distributor will receive all the funds from all the consolidators and distribute the funds amongst all voters
 
+Supported configurations:
+
+- Consolidator: Flat payouts to specific addresses
+- Distributor: Distribute percentage of forged amount to voters
+- Distributor: Distribute all received funds on an address to voters
+
 ## Installation
 
 ```
@@ -68,6 +74,8 @@ and edit accordingly
   "address": "", // the address of the distributor
   "secret1": "", // The secret of the distributor account
   "secret2": null, // The second secret of the distributor account
+  "mode": "forged", // choice of mode (between received and forged). Forged is distrubute a percentage of what you have forged to your voters and received is distribute whatever amount you receive on this address
+  "percentage": 100, // If you select forged mode, this is percentage of what you forge that you would like to share
   "requiredVotes": [], // The names of delegates that are required before a voter would be considered valid
   "optionalVotes": [], // The names of optional delegates that would increase a voters virtual weigth (and thus payout) by X
   "optionalIncreasePercentage": 5, // The percentage per optional delegate that a voters virtual weigth (and thus payout) would be increased
@@ -104,10 +112,16 @@ More can be read about PM2 on their [official documentation](http://pm2.keymetri
 
 ## Ignoring the schedule
 
-You can run both consolidator.js and distributor.js with the switch --once which will cause it to ignore it's schedule and run immediately. Example:
+You can run both consolidator.js and distributor.js with the switch --once which will cause it to ignore it's schedule and run immediately.
+In addition you can add the --dryrun parameter to test your configuration. (it will not send transactions nor save the balance to disk)
+Example:
 
 ```
 node consolidator.js --once
+```
+
+```
+node consolidator.js --once --dryrun
 ```
 
 ## Output
@@ -123,4 +137,4 @@ This program is free software: you can redistribute it and/or modify it under th
 
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the [GNU General Public License](https://github.com/LiskHQ/lisk-docker/tree/master/LICENSE) along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the [GNU General Public License](https://github.com/5an1ty/lisk-pool/tree/master/LICENSE) along with this program.  If not, see <http://www.gnu.org/licenses/>.

@@ -8,6 +8,18 @@ const Logic = require("./logic");
 const logic = new Logic(config);
 const util = require("./util");
 
+const argv = require('yargs')
+.option('once', {
+    type: 'boolean', demand: false, default: false
+})
+.option('dryrun', {
+    type: 'boolean', demand: false, default: false
+})
+.alias('o', 'once')
+.alias('d', 'dryrun')
+.alias('h', 'help')
+.argv;
+
 const schedule = later.parse.cron(config.schedule);
 
 async function app() {
@@ -20,15 +32,21 @@ async function app() {
     }
     try {
       const newBalance = await logic.retrieveNewForgedBalance(balance);
-      console.log(`New owed balance: ${JSON.stringify(newBalance)}`);
-      const newAccounts = await Promise.all(newBalance.accounts.map(account => logic.payout(account)));
+      console.log(`New owed balance:`);
+      console.log(JSON.stringify(newBalance, null, 2));
+      console.log('-------------------------------------------------------');
+      const newAccounts = await Promise.all(newBalance.accounts.map(account => logic.payout(account, argv.dryrun)));
+      console.log('-------------------------------------------------------');
       newBalance.accounts = newAccounts;
-      console.log(`New processed balance: ${JSON.stringify(newBalance)}`);
-      jsonfile.writeFile(balanceFile, newBalance, (err) => {
-        if (err) {
-          throw err;
-        }
-      });
+      console.log(`New processed balance:`);
+      console.log(JSON.stringify(newBalance, null, 2));
+      if (!argv.dryrun) {
+        jsonfile.writeFile(balanceFile, newBalance, (err) => {
+          if (err) {
+            throw err;
+          }
+        });
+      }
     } catch (e) {
       console.log('Encountered an error while trying to update the balance');
       throw e;
@@ -36,7 +54,7 @@ async function app() {
   }); 
 }
 
-if (process.argv[2] === "--once") {
+if (argv.once) {
   app();
 } else {
   console.log('Consolidator started succesfully, next run will be at: ' + later.schedule(schedule).next(1));
