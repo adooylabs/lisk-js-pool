@@ -61,7 +61,7 @@ class Logic {
       if (distributableBalance.balance > 0) {
         const eligableVoters = await this.getEligableVoters();
         eligableVoters.forEach(eligableVoter => {
-          eligableVoter.voter.increasedBalance = eligableVoter.voter.balance * (1 + ((eligableVoter.optional * this.config.optionalIncreasePercentage) / 100));
+          eligableVoter.voter.increasedBalance = math.eval(`${eligableVoter.voter.balance} * (1 + ((${eligableVoter.optional} * ${this.config.optionalIncreasePercentage}) / 100))`);
         });
         const totalWeight = eligableVoters.reduce((mem, val) => mem = mem + parseInt(val.voter.increasedBalance), 0);
         eligableVoters.forEach(eligableVoter => {

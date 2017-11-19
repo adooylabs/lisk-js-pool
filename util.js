@@ -3,7 +3,7 @@ const math = require("mathjs");
 const util = {
 
   dustToLSK: function dustToLSK(dust) {
-    return math.round(math.eval(`${dust} / 100000000`),4);
+    return math.round(math.eval(`${dust} / 100000000`),6);
   },
 
   LSKToDust: function LSKToDust(LSK) {
