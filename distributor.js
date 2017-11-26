@@ -38,6 +38,8 @@ async function app() {
         console.log("Historical Unpaid : " + util.dustToLSK(balance.accounts.reduce((mem, val) => mem = mem + val.unpaidBalance, 0)) + " LSK");
         console.log(`Distributable balance: ${util.dustToLSK(distributable)}`);
         console.log(`Payable balance: ${util.dustToLSK(payableAmount)}`);
+        console.log(`Paid ${newBalance.accounts.filter(a => a.unpaidBalance >= util.LSKToDust(config.minPayout)).length} accounts`);
+        console.log(`Unpaid ${newBalance.accounts.filter(a => a.unpaidBalance < util.LSKToDust(config.minPayout)).length} accounts`);
         console.log('-------------------------------------------------------');
         const newAccounts = await Promise.all(newBalance.accounts.map(account => logic.payout(account, argv.dryrun)));
         console.log('-------------------------------------------------------');
