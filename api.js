@@ -7,7 +7,7 @@ class Api {
     this.config = config;
     this.http = axios.create({
       baseURL: "http://" + this.config.node + ":" + this.config.port,
-      timeout: 5000
+      timeout: 10000
     });
   }
 
