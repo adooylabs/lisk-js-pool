@@ -39,6 +39,11 @@ class Api {
     return versions.data.version;
   }
 
+  async getPeers() {
+    const versions = await this.http.get(`/api/peers`);
+    return versions.data.peers;
+  }
+
   async sendTransaction (transaction) {
     const version = await this.getVersion();
     const payload = {"transaction": transaction};

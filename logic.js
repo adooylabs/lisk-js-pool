@@ -9,6 +9,13 @@ class Logic {
     this.api = new Api(config);
   }
 
+  async checkLaunch() {
+    const peers = await this.api.getPeers();
+    if(peers.length === 0) {
+      throw new Error("No Peers Found!");
+    }
+  }
+
   async getEligableVoters() {
     const allVotes = [];
     this.config.requiredVotes.forEach(dg => allVotes.push({delegate: dg, required: true}));

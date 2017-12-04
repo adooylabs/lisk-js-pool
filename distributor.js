@@ -22,6 +22,8 @@ const argv = require('yargs')
 
 const schedule = later.parse.cron(config.schedule);
 
+let toWriteBalance;
+
 async function app() {
   jsonfile.readFile(balanceFile, async (err, balance) => {
     if(!balance) {
@@ -31,6 +33,7 @@ async function app() {
       }
     }
     try {
+      await logic.checkLaunch();
       const { newBalance, distributable, payableAmount } = await logic.retrieveNewBalance(balance);
       if (newBalance) {
         console.log('-------------------------------------------------------');
@@ -46,6 +49,7 @@ async function app() {
         console.log(`Total amount sent to node for processing: ${util.dustToLSK(newAccounts.reduce((mem, a) => mem = mem + a.paid, 0))}`);
         console.log('-------------------------------------------------------');
         newBalance.accounts = newAccounts.map(a => a.account);
+        toWriteBalance = newBalance;
         console.log("Final Paid : " + util.dustToLSK(newBalance.accounts.reduce((mem, val) => mem = mem + val.paidBalance, 0)) + " LSK");
         console.log("Final Unpaid : " + util.dustToLSK(newBalance.accounts.reduce((mem, val) => mem = mem + val.unpaidBalance, 0)) + " LSK");
         console.log('-------------------------------------------------------');
@@ -59,11 +63,13 @@ async function app() {
       } else {
         throw new Error("Undefined balance");
       }
-    } catch (errObj) {
-      console.log('Encountered an error while trying to update the balance');
-      console.log('This had to be saved to disk but failed, verify everything!');
-      console.log(JSON.stringify(errObj.data, null, 2));
-      throw errObj.err;
+    } catch (err) {
+      console.log('Encountered an error while trying to update the balance:');
+      console.log(err);
+      if(toWriteBalance) {
+        console.log('This had to be saved to disk but failed, verify everything!');
+        console.log(JSON.stringify(toWriteBalance, null, 2));
+      }
     }
   }); 
 }
